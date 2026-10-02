@@ -1,20 +1,32 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useState } from 'react';
+
+import Splash from './src/screens/1-Splash';
+import Onboarding from './src/screens/2-Onboarding';
+import Permissao from './src/screens/3-Permissao';
+import MenuInferior from './src/components/MenuInferior';
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+  const [tela, setTela] = useState('splash');
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+  function irPara(novaTela) {
+    setTela(novaTela);
+  }
+
+  if (tela === 'splash') {
+    return <Splash irPara={irPara} />;
+  }
+
+  if (tela === 'onboarding') {
+    return <Onboarding irPara={irPara} />;
+  }
+
+  if (tela === 'permissao') {
+    return <Permissao irPara={irPara} />;
+  }
+
+  if (tela === 'home') {
+    return <MenuInferior irPara={irPara} />;
+  }
+
+  return <Splash irPara={irPara} />;
+}
