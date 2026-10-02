@@ -52,9 +52,11 @@ export default function Perfil({ irPara }) {
           <View style={styles.avatarContainer}>
             <View style={styles.avatarRing}>
               <Image
-                source={{
-                  uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCW4ImbRT5iZb7zolzNfnzPlrKdfzPHUCYSCasNJ1Sv3ZS8JNuyVl-6LZZaoJZxyFC1sxfmUkUqZiejjoxEcD4OsvGKyZ3Fr_VwFY_5lYVc9F_RVHCOFKyP_97xOG7KpSTk5V97HIFOtFrhtNksxj49lKP09gOqXA7-jwrpy_ZkK88IX4GCms6MXCpu9dCmu6pYCepWaFGsz7oaJzvVjuK0U2UUXug_G00sSh_PGBrjp7Z3XxcHY_M',
-                }}
+                source={
+                  tryRequireImage()
+                    ? require('../../assets/imagePerfil.png')
+                    : { uri: 'https://via.placeholder.com/150' }
+                }
                 style={styles.avatarImage}
               />
             </View>
@@ -234,6 +236,14 @@ export default function Perfil({ irPara }) {
       <MenuInferior irPara={irPara} telaAtual="Perfil" />
     </SafeAreaView>
   );
+}
+
+function tryRequireImage() {
+  try {
+    return require('../../assets/imagePerfil.png');
+  } catch (e) {
+    return null;
+  }
 }
 
 const styles = StyleSheet.create({

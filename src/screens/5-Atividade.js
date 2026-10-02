@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   ImageBackground,
 } from 'react-native';
 
@@ -218,13 +217,6 @@ export default function Home({ navigation }) {
               </View>
 
             </View>
-
-
-            <TouchableOpacity style={styles.actionButton}>
-              <Text style={styles.actionText}>
-                Ver detalhes
-              </Text>
-            </TouchableOpacity>
 
           </View>
         </View>
@@ -675,24 +667,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     color: '#554245',
-  },
-
-  actionButton: {
-    width: 97,
-    height: 52,
-    borderRadius: 30,
-    backgroundColor: '#7F1D3B',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-
-  actionText: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 12,
-    lineHeight: 16,
-    textAlign: 'center',
-    color: '#FFFFFF',
   },
 
 
