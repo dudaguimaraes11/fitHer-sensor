@@ -1,758 +1,714 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ImageBackground,
+  StatusBar,
 } from 'react-native';
+import { Pedometer } from 'expo-sensors';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import Metas from './6-Metas';
 
-export default function Home({ navigation }) {
+const COLORS = {
+  background: '#FFF8F8',
+  white: '#FFFFFF',
+  wine: '#7F1D3B',
+  darkWine: '#600126',
+  rose: '#A93349',
+  lightRose: '#FCE9EE',
+  paleRose: '#FFF0F3',
+  text: '#22191C',
+  muted: '#554245',
+};
+
+export default function AtividadeScreen() {
+  const [passos, setPassos] = useState(6842);
+  const [sensorDisponivel, setSensorDisponivel] = useState(false);
+  const [meta, setMeta] = useState(8000);
+  const [mostrarMetas, setMostrarMetas] = useState(false);
+
+  const progresso = Math.min(passos / meta, 1);
+  const percentual = Math.round(progresso * 100);
+
+  useEffect(() => {
+    let subscription;
+    let ativo = true;
+
+    async function iniciarSensor() {
+      try {
+        const disponivel = await Pedometer.isAvailableAsync();
+
+        if (!ativo) return;
+
+        setSensorDisponivel(disponivel);
+
+        if (!disponivel) return;
+
+        subscription = Pedometer.watchStepCount((result) => {
+          if (ativo) {
+            setPassos(result.steps);
+          }
+        });
+      } catch (error) {
+        console.warn('Não foi possível iniciar o pedômetro:', error);
+
+        if (ativo) {
+          setSensorDisponivel(false);
+        }
+      }
+    }
+
+    iniciarSensor();
+
+    return () => {
+      ativo = false;
+      subscription?.remove();
+    };
+  }, []);
+
+  function abrirMetas() {
+    setMostrarMetas(true);
+  }
+
+  function voltarParaAtividade() {
+    setMostrarMetas(false);
+  }
+
+  function salvarMeta(novaMeta) {
+    const valor = Number(novaMeta);
+
+    if (Number.isFinite(valor) && valor > 0) {
+      setMeta(valor);
+    }
+
+    setMostrarMetas(false);
+  }
+
+  // Abre a tela de metas dentro desta tela,
+  // mantendo o MenuInferior existente.
+  if (mostrarMetas) {
+    return (
+      <Metas
+        metaAtual={meta}
+        onSalvarMeta={salvarMeta}
+        irPara={voltarParaAtividade}
+      />
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={COLORS.background}
+      />
 
-      <View style={styles.header}>
-        <View style={styles.logoArea}>
-          <View style={styles.logoIcon}>
-            <Ionicons
-              name="fitness-outline"
-              size={20}
-              color="#600126"
-            />
+      <View style={styles.screen}>
+        {/* Cabeçalho */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <View style={styles.logo}>
+              <Text style={styles.logoIcon}>❀</Text>
+            </View>
+            <Text style={styles.logoText}>FitHer</Text>
           </View>
 
-          <Text style={styles.logoText}>FitHer</Text>
-        </View>
-
-        <View style={styles.headerRight}>
-          <Text style={styles.inicio}>início</Text>
-
-          <View style={styles.profile}>
-            <Ionicons
-              name="person"
-              size={17}
-              color="#7F1D3B"
-            />
+          <View style={styles.headerRight}>
+            <Text style={styles.headerPage}>Atividade</Text>
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>F</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-
-        <View style={styles.greetingContainer}>
-          <View style={styles.greeting}>
-            <View style={styles.greetingText}>
-              <Text style={styles.greetingTitle}>
-                Olá!
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Título */}
+          <View style={styles.titleRow}>
+            <View>
+              <Text style={styles.eyebrow}>
+                SENSORIAMENTO EM TEMPO REAL
               </Text>
+              <Text style={styles.pageTitle}>Sua atividade</Text>
+            </View>
 
-              <Text style={styles.greetingSubtitle}>
-                Vamos continuar em movimento?
+            <View style={styles.sensorBadge}>
+              <View
+                style={[
+                  styles.sensorDot,
+                  {
+                    backgroundColor: sensorDisponivel
+                      ? COLORS.darkWine
+                      : '#999',
+                  },
+                ]}
+              />
+              <Text style={styles.sensorBadgeText}>
+                {sensorDisponivel
+                  ? 'Pedômetro ativo'
+                  : 'Sensor indisponível'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Cartão de atividade */}
+          <View style={styles.activityCard}>
+            <View style={styles.activityHeader}>
+              <View style={styles.activityIcon}>
+                <Text style={styles.personIcon}>♟</Text>
+              </View>
+
+              <View style={styles.activityHeading}>
+                <Text style={styles.cardTitle}>Movimento de Hoje</Text>
+              </View>
+
+              <View style={styles.activeBadge}>
+                <Text style={styles.activeBadgeText}>
+                  {sensorDisponivel ? 'Sensor ativo' : 'Sensor inativo'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.stepsRow}>
+              <Text style={styles.stepsNumber}>
+                {passos.toLocaleString('pt-BR')}
+              </Text>
+              <Text style={styles.stepsLabel}>passos</Text>
+            </View>
+
+            <Text style={styles.stepsDescription}>
+              ♡ Passadas com cadência constante e ritmo fluido
+            </Text>
+
+            <View style={styles.statsContainer}>
+              <View style={styles.statItem}>
+                <View style={styles.statIcon}>
+                  <Text>▤</Text>
+                </View>
+                <Text style={styles.statLabel}>Distância</Text>
+                <Text style={styles.statValue}>
+                  {(passos * 0.0007).toLocaleString('pt-BR', {
+                    maximumFractionDigits: 1,
+                  })}{' '}
+                  km
+                </Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <View style={styles.statIcon}>
+                  <Text>♨</Text>
+                </View>
+                <Text style={styles.statLabel}>Calorias</Text>
+                <Text style={styles.statValue}>
+                  {Math.round(passos * 0.047)} kcal
+                </Text>
+              </View>
+
+              <View style={styles.statItem}>
+                <View style={styles.statIcon}>
+                  <Text>◉</Text>
+                </View>
+                <Text style={styles.statLabel}>Progresso</Text>
+                <Text style={styles.statValue}>{percentual}%</Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Cartão de progresso da meta */}
+          <View style={styles.goalCard}>
+            <View style={styles.goalHeader}>
+              <View style={styles.goalIcon}>
+                <Text style={styles.goalIconText}>◎</Text>
+              </View>
+
+              <View style={styles.goalHeading}>
+                <Text style={styles.goalTitle}>Progresso da meta</Text>
+                <Text style={styles.goalSubtitle}>
+                  Objetivo diário consciente
+                </Text>
+              </View>
+
+              <View style={styles.percentBadge}>
+                <Text style={styles.percentText}>{percentual}%</Text>
+              </View>
+            </View>
+
+            {/* Indicador circular */}
+            <View style={styles.progressArea}>
+              <View style={styles.progressCircle}>
+                <View
+                  style={[
+                    styles.progressArc,
+                    {
+                      borderTopColor: COLORS.rose,
+                      borderRightColor: COLORS.rose,
+                      transform: [
+                        { rotate: `${progresso * 360 - 45}deg` },
+                      ],
+                    },
+                  ]}
+                />
+
+                <View style={styles.progressInner}>
+                  <Text style={styles.progressEyebrow}>
+                    ATUAL / META
+                  </Text>
+                  <Text style={styles.progressNumbers}>
+                    {passos.toLocaleString('pt-BR')} /{' '}
+                    {meta.toLocaleString('pt-BR')}
+                  </Text>
+                  <Text style={styles.progressUnit}>passos</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Mensagem motivacional */}
+            <View style={styles.motivationBox}>
+              <View style={styles.heartCircle}>
+                <Text style={styles.heart}>♥</Text>
+              </View>
+
+              <Text style={styles.motivationText}>
+                Faltam{' '}
+                <Text style={styles.motivationBold}>
+                  {Math.max(meta - passos, 0).toLocaleString('pt-BR')} passos
+                </Text>{' '}
+                para atingir sua meta. Continue no seu tempo, você já foi
+                incrível hoje!
               </Text>
             </View>
 
-            <TouchableOpacity style={styles.notification}>
-              <Ionicons
-                name="notifications-outline"
-                size={22}
-                color="#600126"
-              />
-
-              <View style={styles.notificationDot} />
+            {/* Botão Alterar meta */}
+            <TouchableOpacity
+              style={styles.changeGoalButton}
+              activeOpacity={0.85}
+              onPress={abrirMetas}
+            >
+              <Text style={styles.buttonIcon}>☷</Text>
+              <Text style={styles.changeGoalText}>Alterar meta</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-
-        <View style={styles.cardMargin}>
-          <View style={styles.stepsCard}>
-
-            <View style={styles.cardHeader}>
-
-              <View style={styles.cardTitleArea}>
-
-                <View style={styles.stepsIcon}>
-                  <Ionicons
-                    name="footsteps-outline"
-                    size={23}
-                    color="#600126"
-                  />
-                </View>
-
-                <View>
-                  <Text style={styles.cardLabel}>
-                    ATIVIDADE
-                  </Text>
-
-                  <Text style={styles.cardTitle}>
-                    Passos de hoje
-                  </Text>
-                </View>
-
-              </View>
-
-              <View style={styles.goalBadge}>
-                <Text style={styles.goalText}>
-                  Meta diária
-                </Text>
-              </View>
-
+          {/* Dica de bem-estar */}
+          <View style={styles.tipCard}>
+            <View style={styles.tipImage}>
+              <Text style={styles.tipImageEmoji}>🏃🏻‍♀️</Text>
             </View>
 
-
-            <View style={styles.stepMetrics}>
-
-              <View style={styles.stepNumberArea}>
-                <Text style={styles.stepNumber}>
-                  6.842
-                </Text>
-
-                <Text style={styles.stepUnit}>
-                  passos
-                </Text>
-              </View>
-
-              <Text style={styles.expectedSteps}>
-                de 8.000 passos previstos
+            <View style={styles.tipContent}>
+              <Text style={styles.tipTitle}>
+                Ritmo do seu bem-estar
               </Text>
-
+              <Text style={styles.tipDescription}>
+                Caminhar de forma atenta estimula a circulação e renova a
+                mente.
+              </Text>
             </View>
-
-
-            <View style={styles.progressBackground}>
-              <View style={styles.progressFill} />
-            </View>
-
-
-            <View style={styles.subMetrics}>
-
-              <View style={styles.metricCard}>
-
-                <View style={styles.metricIcon}>
-                  <Ionicons
-                    name="navigate-outline"
-                    size={16}
-                    color="#600126"
-                  />
-                </View>
-
-                <View>
-                  <Text style={styles.metricValue}>
-                    4,8 km
-                  </Text>
-
-                  <Text style={styles.metricLabel}>
-                    DISTÂNCIA
-                  </Text>
-                </View>
-
-              </View>
-
-
-              <View style={styles.metricCard}>
-
-                <View style={styles.metricIcon}>
-                  <MaterialCommunityIcons
-                    name="fire"
-                    size={17}
-                    color="#600126"
-                  />
-                </View>
-
-                <View>
-                  <Text style={styles.metricValue}>
-                    326 kcal
-                  </Text>
-
-                  <Text style={styles.metricLabel}>
-                    CALORIAS
-                  </Text>
-                </View>
-
-              </View>
-
-            </View>
-
           </View>
-        </View>
+        </ScrollView>
 
-        <View style={styles.cardMargin}>
-          <View style={styles.dailyCard}>
-
-            <View style={styles.dailyContent}>
-
-              {/* CÍRCULO DE PROGRESSO */}
-              <View style={styles.progressCircle}>
-
-                <View style={styles.progressCircleInner}>
-                  <Text style={styles.progressPercent}>
-                    85%
-                  </Text>
-                </View>
-
-              </View>
-
-
-              <View style={styles.dailyText}>
-
-                <Text style={styles.dailyTitle}>
-                  Meta diária
-                </Text>
-
-                <Text style={styles.dailySubtitle}>
-                  85% concluída
-                </Text>
-
-                <Text style={styles.dailyDescription}>
-                  Quase lá! Faltam apenas 1.158 passos
-                </Text>
-
-              </View>
-
-            </View>
-
-          </View>
-        </View>
-
-
-        <View style={styles.cardMargin}>
-          <View style={styles.motivationCard}>
-
-            <View style={styles.motivationIcon}>
-              <Ionicons
-                name="heart"
-                size={19}
-                color="#600126"
-              />
-            </View>
-
-            <View style={styles.motivationText}>
-
-              <Text style={styles.motivationTitle}>
-                Cada passo conta
-              </Text>
-
-              <Text style={styles.motivationDescription}>
-                Pequenos movimentos ao longo do dia
-                ajudam você a manter uma rotina ativa.
-              </Text>
-
-            </View>
-
-          </View>
-        </View>
-
-        <View style={styles.cardMargin}>
-          <View style={styles.storyCard}>
-
-            <ImageBackground
-              source={
-                tryRequireImage()
-                  ? require('../../assets/imageHome.png')
-                  : { uri: 'https://via.placeholder.com/400x200' }
-              }
-              style={styles.storyImage}
-              imageStyle={styles.storyImageRadius}
-            >
-
-              <View style={styles.storyOverlay} />
-
-              <Text style={styles.storyLabel}>
-                DICA DO DIA
-              </Text>
-
-              <Text style={styles.storyTitle}>
-                Caminhada Consciente de 10min
-              </Text>
-
-              <Text style={styles.storySubtitle}>
-                RENOVE SUA MENTE
-              </Text>
-
-            </ImageBackground>
-
-          </View>
-        </View>
-
-      </ScrollView>
-
-    </View>
+        {/* A navegação inferior fica exclusivamente no MenuInferior.js */}
+      </View>
+    </SafeAreaView>
   );
 }
 
-function tryRequireImage() {
-  try {
-    return require('../../assets/imageHome.png');
-  } catch (e) {
-    return null;
-  }
-}
-
 const styles = StyleSheet.create({
-
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#FFF8F8',
+    backgroundColor: COLORS.background,
   },
-
-
+  screen: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
   header: {
     height: 64,
-    width: '100%',
     paddingHorizontal: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: 'rgba(255,248,248,0.96)',
-    elevation: 3,
-    zIndex: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F9ECEF',
   },
-
-  logoArea: {
+  logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-
-  logoIcon: {
+  logo: {
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F6E4E8',
-    justifyContent: 'center',
+    borderRadius: 9,
+    backgroundColor: COLORS.lightRose,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-
+  logoIcon: {
+    color: COLORS.wine,
+    fontSize: 21,
+  },
   logoText: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
+    color: COLORS.darkWine,
     fontSize: 18,
-    color: '#600126',
+    fontWeight: '700',
     letterSpacing: -0.45,
   },
-
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
   },
-
-  inicio: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 18,
-    color: '#7F1D3B',
+  headerPage: {
+    color: COLORS.wine,
+    fontSize: 13,
+    fontWeight: '600',
   },
-
-  profile: {
+  avatar: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F6E4E8',
-    justifyContent: 'center',
+    backgroundColor: '#D7B39C',
     alignItems: 'center',
-    shadowColor: '#FB7185',
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
+    justifyContent: 'center',
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 22,
+    paddingBottom: 24,
+    gap: 16,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  eyebrow: {
+    color: COLORS.rose,
+    fontSize: 8,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  pageTitle: {
+    marginTop: 3,
+    color: COLORS.darkWine,
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  sensorBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#F6E4E8',
+  },
+  sensorDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  sensorBadgeText: {
+    color: COLORS.muted,
+    fontSize: 8,
+    fontWeight: '600',
+  },
+  activityCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 22,
+    padding: 16,
+    gap: 9,
+    shadowColor: '#6B112D',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 18,
     elevation: 3,
   },
-
-
-  scrollContent: {
-    paddingTop: 64,
-    paddingBottom: 110,
-  },
-
-
-  greetingContainer: {
-    width: '100%',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 16,
-  },
-
-  greeting: {
-    width: '100%',
-    minHeight: 82,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  greetingText: {
-    width: 135,
-  },
-
-  greetingTitle: {
-    fontFamily: 'PlayfairDisplay_600SemiBold',
-    fontSize: 28,
-    lineHeight: 36,
-    color: '#600126',
-    letterSpacing: -0.7,
-  },
-
-  greetingSubtitle: {
-    marginTop: 2,
-    fontFamily: 'PlusJakartaSans_400Regular',
-    fontSize: 14,
-    lineHeight: 22,
-    color: '#554245',
-  },
-
-  notification: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#F6E4E8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-
-  notificationDot: {
-    position: 'absolute',
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#FE7488',
-    right: 4,
-    top: 4,
-    borderWidth: 2,
-    borderColor: '#FFF8F8',
-  },
-
-
-  /* CARDS */
-
-  cardMargin: {
-    width: '100%',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-  },
-
-  stepsCard: {
-    width: '100%',
-    minHeight: 280,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 24,
-    shadowColor: '#7F1D3B',
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    elevation: 4,
-  },
-
-  cardHeader: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  cardTitleArea: {
+  activityHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-
-  stepsIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F6E4E8',
+  activityIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: COLORS.lightRose,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-
-  cardLabel: {
-    fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
-    color: '#A93349',
+  personIcon: {
+    color: COLORS.wine,
+    fontSize: 16,
   },
-
-  cardTitle: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 18,
-    lineHeight: 22,
-    color: '#22191C',
-  },
-
-  goalBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    backgroundColor: '#F6E4E8',
-  },
-
-  goalText: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 12,
-    color: '#600126',
-  },
-
-
-  /* PASSOS */
-
-  stepMetrics: {
-    marginTop: 16,
-  },
-
-  stepNumberArea: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  stepNumber: {
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    fontSize: 36,
-    lineHeight: 36,
-    letterSpacing: -0.9,
-    color: '#600126',
-  },
-
-  stepUnit: {
-    marginLeft: 4,
-    marginTop: 10,
-    fontFamily: 'PlusJakartaSans_500Medium',
-    fontSize: 14,
-    color: '#554245',
-  },
-
-  expectedSteps: {
-    marginTop: 4,
-    fontFamily: 'PlusJakartaSans_500Medium',
-    fontSize: 12,
-    lineHeight: 18,
-    color: '#554245',
-  },
-
-  progressBackground: {
-    width: '100%',
-    height: 12,
-    marginTop: 8,
-    backgroundColor: '#FCE9EE',
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-
-  progressFill: {
-    width: '85%',
-    height: '100%',
-    backgroundColor: '#7F1D3B',
-    borderRadius: 20,
-  },
-
-
-  subMetrics: {
-    width: '100%',
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-
-  metricCard: {
+  activityHeading: {
     flex: 1,
-    height: 58,
-    backgroundColor: '#FFF0F3',
-    borderRadius: 12,
+  },
+  cardTitle: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  activeBadge: {
+    backgroundColor: COLORS.paleRose,
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    maxWidth: 90,
+  },
+  activeBadgeText: {
+    color: COLORS.darkWine,
+    fontSize: 8,
+    fontWeight: '600',
+  },
+  stepsRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 5,
+    marginTop: 2,
+  },
+  stepsNumber: {
+    color: COLORS.darkWine,
+    fontSize: 29,
+    fontWeight: '800',
+    letterSpacing: -0.8,
+  },
+  stepsLabel: {
+    color: COLORS.rose,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  stepsDescription: {
+    color: COLORS.muted,
+    fontSize: 9,
+    marginTop: -7,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#FFF5F7',
+    borderRadius: 15,
+    paddingVertical: 10,
+    marginTop: 3,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 3,
+  },
+  statIcon: {
+    width: 25,
+    height: 25,
+    borderRadius: 13,
+    backgroundColor: COLORS.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statLabel: {
+    color: COLORS.muted,
+    fontSize: 9,
+  },
+  statValue: {
+    color: COLORS.darkWine,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  goalCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 22,
+    padding: 16,
+    shadowColor: '#6B112D',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.07,
+    shadowRadius: 18,
+    elevation: 3,
+  },
+  goalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  goalIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.lightRose,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goalIconText: {
+    color: COLORS.darkWine,
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  goalHeading: {
+    flex: 1,
+  },
+  goalTitle: {
+    color: COLORS.darkWine,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  goalSubtitle: {
+    color: COLORS.muted,
+    fontSize: 9,
+    marginTop: 2,
+  },
+  percentBadge: {
+    backgroundColor: '#F6E4E8',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  percentText: {
+    color: COLORS.darkWine,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  progressArea: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 18,
+  },
+  progressCircle: {
+    width: 154,
+    height: 154,
+    borderRadius: 77,
+    borderWidth: 11,
+    borderColor: COLORS.lightRose,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressArc: {
+    position: 'absolute',
+    width: 154,
+    height: 154,
+    borderRadius: 77,
+    borderWidth: 11,
+    borderLeftColor: 'transparent',
+    borderBottomColor: 'transparent',
+  },
+  progressInner: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  progressEyebrow: {
+    color: COLORS.rose,
+    fontSize: 7,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  progressNumbers: {
+    color: COLORS.darkWine,
+    fontSize: 12,
+    fontWeight: '800',
+    marginTop: 4,
+  },
+  progressUnit: {
+    color: COLORS.muted,
+    fontSize: 9,
+    marginTop: 2,
+  },
+  motivationBox: {
+    backgroundColor: COLORS.paleRose,
+    borderRadius: 13,
     padding: 12,
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    alignItems: 'flex-start',
+    gap: 9,
   },
-
-  metricIcon: {
-    width: 28,
-    height: 32,
-    borderRadius: 20,
-    backgroundColor: '#F0DEE3',
+  heartCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-
-  metricValue: {
-    fontFamily: 'PlusJakartaSans_700Bold',
+  heart: {
+    color: COLORS.darkWine,
     fontSize: 14,
-    lineHeight: 20,
-    color: '#600126',
   },
-
-  metricLabel: {
-    fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize: 10,
-    lineHeight: 14,
-    letterSpacing: 0.5,
-    color: '#554245',
-  },
-
-
-  dailyCard: {
-    width: '100%',
-    height: 120,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: '#7F1D3B',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-
-  dailyContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    flex: 1,
-  },
-
-  progressCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 5,
-    borderColor: '#FCE9EE',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  progressCircleInner: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  progressPercent: {
-    fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize: 12,
-    color: '#600126',
-  },
-
-  dailyText: {
-    flex: 1,
-  },
-
-  dailyTitle: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 18,
-    lineHeight: 26,
-    color: '#22191C',
-  },
-
-  dailySubtitle: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 12,
-    lineHeight: 18,
-    color: '#A93349',
-  },
-
-  dailyDescription: {
-    marginTop: 2,
-    fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize: 10,
-    lineHeight: 14,
-    color: '#554245',
-  },
-
-
-  motivationCard: {
-    width: '100%',
-    minHeight: 88,
-    borderRadius: 12,
-    padding: 16,
-    backgroundColor: '#FCE9EE',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-
-  motivationIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
   motivationText: {
     flex: 1,
+    color: COLORS.text,
+    fontSize: 10,
+    lineHeight: 15,
   },
-
-  motivationTitle: {
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#600126',
+  motivationBold: {
+    color: COLORS.darkWine,
+    fontWeight: '800',
   },
-
-  motivationDescription: {
+  changeGoalButton: {
+    marginTop: 14,
+    minHeight: 46,
+    borderRadius: 25,
+    backgroundColor: COLORS.wine,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: COLORS.wine,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  buttonIcon: {
+    color: COLORS.white,
+    fontSize: 16,
+  },
+  changeGoalText: {
+    color: COLORS.white,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  tipCard: {
+    backgroundColor: COLORS.paleRose,
+    borderRadius: 14,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  tipImage: {
+    width: 42,
+    height: 42,
+    borderRadius: 10,
+    backgroundColor: '#D8B7A5',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tipImageEmoji: {
+    fontSize: 23,
+  },
+  tipContent: {
+    flex: 1,
+  },
+  tipTitle: {
+    color: COLORS.darkWine,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  tipDescription: {
+    color: COLORS.muted,
+    fontSize: 9,
+    lineHeight: 13,
     marginTop: 2,
-    fontFamily: 'PlusJakartaSans_500Medium',
-    fontSize: 12,
-    lineHeight: 18,
-    color: '#554245',
   },
-
-
-  storyCard: {
-    width: '100%',
-    height: 160,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-
-  storyImage: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'flex-end',
-    padding: 15,
-  },
-
-  storyImageRadius: {
-    borderRadius: 12,
-  },
-
-  storyOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(60, 10, 25, 0.38)',
-  },
-
-  storyLabel: {
-    fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize: 12,
-    lineHeight: 26,
-    color: '#FFEFF2',
-    textTransform: 'capitalize',
-  },
-
-  storyTitle: {
-    fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize: 18,
-    lineHeight: 26,
-    color: '#FFFFFF',
-  },
-
-  storySubtitle: {
-    fontFamily: 'PlusJakartaSans_700Bold',
-    fontSize: 12,
-    lineHeight: 26,
-    color: '#FFFFFF',
-  },
-
 });
