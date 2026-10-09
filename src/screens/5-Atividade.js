@@ -405,9 +405,10 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   pageTitle: {
+    fontFamily: 'PlayfairDisplay_600SemiBold', 
     marginTop: 3,
     color: COLORS.darkWine,
-    fontSize: 22,
+    fontSize: 30,
     fontWeight: '700',
   },
   sensorBadge: {

@@ -444,8 +444,9 @@ const styles = StyleSheet.create({
   },
 
   title: {
+    fontFamily: 'PlayfairDisplay_600SemiBold',
     marginTop: 7,
-    fontSize: 23,
+    fontSize: 30,
     fontWeight: '700',
     color: '#650B2B',
   },
